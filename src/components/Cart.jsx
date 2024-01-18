@@ -1,8 +1,38 @@
-import React from "react";
+import React, { useState } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
 
-const Cart = ({ cart }) => {
+const Cart = ({ cart, setCart }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const getTotalPrice = () => {
     return cart.reduce((total, order) => total + order.totalPrice, 0);
+  };
+
+  const handleProceed = async () => {
+    try {
+      setIsProcessing(true);
+
+      const orderId = cart[0]._id;
+
+      const response = await axios.patch(
+        `http://localhost:3000/api/orders/${orderId}/complete`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      setCart([]);
+      console.log(response.data.message);
+      toast.success(response.data.message);
+    } catch (error) {
+      console.error("Error completing order:", error);
+      toast.error("Error completing order");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -30,13 +60,13 @@ const Cart = ({ cart }) => {
             Total: ${getTotalPrice()}
           </div>
           <button
-            className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600"
-            onClick={() => {
-              // Implement your logic for proceeding with the transaction
-              alert("Proceeding with the transaction!");
-            }}
+            className={`bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 ${
+              isProcessing && "opacity-50 cursor-not-allowed"
+            }`}
+            onClick={handleProceed}
+            disabled={isProcessing}
           >
-            Proceed
+            {isProcessing ? "Processing..." : "Proceed"}
           </button>
         </>
       )}

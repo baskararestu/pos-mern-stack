@@ -1,6 +1,8 @@
 import React from "react";
+import ButtonProductCard from "./ButtonProductCard";
 
-function ProductCard({ product, onAddToCart }) {
+function ProductCard({ product, onAddToCart, deleteProduct, onEditProduct }) {
+  console.log(deleteProduct);
   return (
     <div className="card w-96 bg-base-100 shadow-xl">
       <figure>
@@ -9,16 +11,24 @@ function ProductCard({ product, onAddToCart }) {
           alt="Shoes"
         />
       </figure>
+
       <div className="card-body">
+        <div
+          className={`badge ${
+            product.isActive ? "badge-success" : "badge-error"
+          } self-end`}
+        >
+          {product.isActive ? "Active" : "Not Active"}
+        </div>
+        <div className="badge badge-outline self-end">{product.category}</div>
         <h2 className="card-title">{product.name}</h2>
         <div className="card-actions justify-between items-center">
-          <div className="badge badge-outline">{product.category}</div>
-          <button
-            className="btn btn-primary"
-            onClick={() => onAddToCart(product._id)}
-          >
-            Add to Cart
-          </button>
+          <ButtonProductCard
+            product={product}
+            onAddToCart={onAddToCart}
+            deleteProduct={deleteProduct}
+            onEditProduct={onEditProduct}
+          />
         </div>
       </div>
     </div>

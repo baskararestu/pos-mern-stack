@@ -1,14 +1,14 @@
+// Home.js
 import React, { useEffect, useState } from "react";
 import ProductCard from "../components/ProductCard";
 import toast from "react-hot-toast";
-import { getProducts } from "../features/productFeature";
+import { deleteProduct, getProducts } from "../features/productFeature";
 import Cart from "../components/Cart";
-import axios from "axios";
+import { addToCart, fetchUnpaidOrders } from "../features/orderFeature";
 
 function Home() {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
-  const [unpaidOrders, setUnpaidOrders] = useState([]);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -22,12 +22,10 @@ function Home() {
       }
     };
 
-    const fetchUnpaidOrders = async () => {
+    const fetchUnpaidOrdersData = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:3000/api/orders/unpaid"
-        );
-        setCart(response.data);
+        const unpaidOrdersData = await fetchUnpaidOrders(token);
+        setCart(unpaidOrdersData);
       } catch (error) {
         console.error(error);
         toast.error("Error fetching unpaid orders");
@@ -35,55 +33,51 @@ function Home() {
     };
 
     fetchProducts();
-    fetchUnpaidOrders();
-  }, []);
-  console.log(cart);
-  const addToCart = async (productId) => {
-    try {
-      const response = await axios.post(
-        "http://localhost:3000/api/orders",
-        {
-          products: [
-            {
-              product: productId,
-              productPrice: 15000,
-              quantity: 1,
-            },
-          ],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    fetchUnpaidOrdersData();
+  }, [token]);
 
-      setCart(response.data.products);
-      console.log(response);
+  const handleAddToCart = async (productId) => {
+    try {
+      const updatedCart = await addToCart(productId, token);
+      setCart(updatedCart);
       toast.success("Product added to cart");
+
+      const unpaidOrdersData = await fetchUnpaidOrders(token);
+      setCart(unpaidOrdersData);
     } catch (error) {
       console.error(error);
       toast.error("Error adding product to cart");
     }
   };
 
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await deleteProduct(productId);
+      toast.success("Product deleted successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Error deleting product");
+    }
+  };
+
   return (
     <div className="flex flex-wrap">
-      <div className="bg-red-500 h-screen w-3/4 p-4 overflow-y-auto">
+      <div className="h-screen w-3/4 p-4 overflow-y-auto rounded-box">
         <h2 className="text-2xl font-bold mb-4">Product List</h2>
         <div className="flex flex-wrap gap-5">
           {products.map((product) => (
             <ProductCard
               key={product._id}
               product={product}
-              onAddToCart={() => addToCart(product._id)}
+              onAddToCart={() => handleAddToCart(product._id)}
+              deleteProduct={handleDeleteProduct(product._id)}
             />
           ))}
         </div>
       </div>
-      <div className="bg-blue-500 h-screen w-1/4 p-4">
+      <div className="h-screen w-1/4 p-4 rounded-box shadow-xl card bg-base-200 ">
         <h2 className="text-2xl font-bold mb-4">Shopping Cart</h2>
-        <Cart cart={cart} />
+        {cart && <Cart cart={cart} setCart={setCart} />}
       </div>
     </div>
   );
